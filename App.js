@@ -1,5 +1,5 @@
-import React from 'react';
-import {StyleSheet, Text, View, ImageBackground, TextInput, TouchableOpacity, Image,ScrollView} from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View, ImageBackground, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -7,16 +7,29 @@ import UploadImage from './UploadImage';
 import Settings from './Settings';
 import Shubunkin from './samplefish JS/shubunkin';
 import LogoScreen from './LogoScreen'; 
-import FishInfo from './FishInfo';
 import ryukin from './samplefish JS/ryukin';
-import Oranda from './samplefish JS/oranda'; // Adjust the path as necessary
-import Calico from './samplefish JS/calico'; // Adjust the path as necessary
-import Pingpong from './samplefish JS/pingpong'; // Adjust the path as necessary
-
+import Oranda from './samplefish JS/oranda';
+import Calico from './samplefish JS/calico';
+import Pingpong from './samplefish JS/pingpong';
+import { getDBConnection, createTable, insertInitialData } from './database/database'; // Adjust the import path as needed
 
 const Stack = createStackNavigator();
 
 export default function App() {
+  useEffect(() => {
+    async function initializeDatabase() {
+      try {
+        const db = await getDBConnection();
+        await createTable(db);
+        await insertInitialData(db);
+      } catch (error) {
+        console.error("Database initialization failed:", error);
+      }
+    }
+
+    initializeDatabase();
+  }, []);
+
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Logo">
@@ -25,7 +38,6 @@ export default function App() {
         <Stack.Screen name="UploadImage" component={UploadImage} options={{ headerShown: false }} />
         <Stack.Screen name="Settings" component={Settings} options={{ headerShown: false }} />
         <Stack.Screen name="Shubunkin" component={Shubunkin} options={{ headerShown: false }} />
-        <Stack.Screen name="FishInfo" component={FishInfo} options={{ headerShown: false }} />
         <Stack.Screen name="ryukin" component={ryukin} options={{ headerShown: false }} />
         <Stack.Screen name="Oranda" component={Oranda} options={{ headerShown: false }} />
         <Stack.Screen name="Calico" component={Calico} options={{ headerShown: false }} />

@@ -1,9 +1,42 @@
-import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, View, Image, TouchableOpacity, ImageBackground, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity, ImageBackground, Modal, ActivityIndicator } from 'react-native';
+import { getDBConnection, fetchFishes } from '../database/database';
 
 const Ryukin = () => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [fish, setFish] = useState(null);
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [loading, setLoading] = useState(true); // Initialize loading state
+
+  useEffect(() => {
+    async function loadDataAsync() {
+      try {
+        setLoading(true); // Start the loading process
+        const db = await getDBConnection();
+        const fishes = await fetchFishes(db);
+        const targetFish = fishes.find(f => f.name === 'Ryukin');
+        setFish(targetFish);
+        setLoading(false); // End loading when data is fetched
+      } catch (error) {
+        console.error('Failed to load the fish data:', error);
+        setLoading(false); // Stop loading on error
+      }
+    }
+
+    loadDataAsync();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#00ff00" />
+      </View>
+    );
+  }
+
+  if (!fish) {
+    return <View style={styles.container}><Text>No fish data available.</Text></View>;
+  }
 
   return (
     <View style={styles.container}>
@@ -16,41 +49,37 @@ const Ryukin = () => {
         </TouchableOpacity>
       </View>
 
-      <Text style={styles.title}>RYUKIN GOLDFISH</Text>
-      <Image source={require('./ryukin.png')} resizeMode="contain" style={styles.fishImage} />
+      <Text style={styles.title}>{fish.name}</Text>
+      <Image source={{ uri: fish.imageURL }} resizeMode="contain" style={styles.fishImage} />
 
       <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(!modalVisible);
-        }}
+        onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.centeredView}>
           <ImageBackground
-            source={require('./bgryukin.png')}  // Path to your static background image
+            source={require('./bgryukin.png')}  // Ensure the path is correct
             resizeMode="cover"
             style={styles.modalView}
             imageStyle={styles.backgroundImageStyle}
-            onLoadEnd={() => setImageLoaded(true)}  // Handle loading state
+            onLoadEnd={() => setImageLoaded(true)}
           >
-            {imageLoaded ? (
+            {imageLoaded && (
               <>
-                <Text style={styles.modalTitle}>RYUKIN GOLDFISH</Text>
-                <Text style={styles.modalText}>Known for their high back and deep body.</Text>
-                <Text style={styles.modalInfo}>Tank Size (for 1 fish) - 30 Gallons</Text>
-                <Text style={styles.modalInfo}>Diet - Omnivore: Includes flakes, pellets, and live foods</Text>
-                <Text style={styles.modalInfo}>Water Temperature 65-75°F (18-24°C)</Text>
+                <Text style={styles.modalTitle}>{fish.name}</Text>
+                <Text style={styles.modalText}>{fish.description}</Text>
+                <Text style={styles.modalInfo}>Tank Size: {fish.tankSize}</Text>
+                <Text style={styles.modalInfo}>Diet: {fish.diet}</Text>
+                <Text style={styles.modalInfo}>Temperature Range: {fish.temperatureRange}</Text>
                 <TouchableOpacity
                   style={styles.buttonClose}
-                  onPress={() => setModalVisible(!modalVisible)}
+                  onPress={() => setModalVisible(false)}
                 >
                   <Text style={styles.textStyle}>Close</Text>
                 </TouchableOpacity>
               </>
-            ) : (
-              <ActivityIndicator size="large" color="#00ff00" /> // Show loader while the image is loading
             )}
           </ImageBackground>
         </View>
